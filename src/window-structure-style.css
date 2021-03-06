@@ -1,0 +1,114 @@
+body {
+	position: relative;
+}
+
+/*
+*
+* Drag
+*
+*/
+
+.drag {
+	position: absolute;
+	z-index: 999;
+	padding: 5px;
+	margin-top: -5px;
+	margin-left: -5px;
+	transform: translate3d(0, 0, 0);
+	-webkit-transform: translate3d(0, 0, 0);
+}
+
+.drag:hover {
+	/* cursor: move; */
+	display: block;
+}
+
+.drag > div.drag-window {
+	width: 100%;
+	height: 100%;
+	position: absolute;
+}
+
+/*
+*
+* WindowStructure
+*
+*/
+
+/* .window {
+	resize: both;
+	overflow: auto;
+} */
+
+.window * {
+	font-family: "Consolas", sans-serif;
+	font-size: 15px;
+}
+
+.window .window-bar {
+	height: 35px; /* ~ 7% */
+	color: #fff;
+	background-color: #000000;
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	align-items: center;
+	box-sizing: border-box;
+	padding: 0;
+	margin: 0;
+}
+
+.window .window-bar .window-container-title {
+	height: 100%;
+	display: flex;
+	justify-content: flex-start;
+	align-items: center;
+	padding-left: 3px;
+	box-sizing: border-box;
+}
+
+.window .window-bar .window-container-title span {
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	overflow: hidden;
+	font-size: 11px;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
+.window .window-main-buttons {
+	height: 100%;
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	box-sizing: border-box;
+}
+
+.window .window-main-buttons button {
+	border: none;
+	cursor: pointer;
+	background: none;
+	outline: none;
+	border-radius: 0px;
+	color: #cccccc;
+	width: 60px;
+	height: 100%;
+	transition: background-color 200ms ease;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	box-sizing: border-box;
+	padding: 0;
+	margin: 0;
+}
+
+.window .window-main-buttons button:last-child:hover {
+	background-color: #e81123;
+}
+
+.window .window-main-buttons button:hover {
+	background-color: #1a1a1a;
+}
