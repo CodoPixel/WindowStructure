@@ -262,19 +262,32 @@ class WindowStructure {
 	 * Should the window have an absolute position?
 	 * @type {boolean}
 	 * @default true
-	 * @public
+	 * @private
 	 */
-	public absolutePosition: boolean = true;
+	private absolutePosition: boolean = true;
 
 	/**
 	 * Options to control the main colors.
 	 * @type {{text: string, background: string, menubarBackground: string, menubarColor: string}}
+	 * @public
 	 */
 	public colors: { text: string; background: string; menubarBackground: string; menubarColor: string } = {
 		text: "#ccc",
 		background: "#0c0c0c",
 		menubarBackground: "#000",
 		menubarColor: "#fff",
+	};
+
+	/**
+	 * Options to control the default minimization of the window.
+	 * @type {{xSide: string, ySide: string, posFromX: number, posFromY: number}}
+	 * @public
+	 */
+	public minimizationOptions: { xSide: string; ySide: string; posFromX: number; posFromY: number } = {
+		xSide: "left",
+		ySide: "bottom",
+		posFromX: 20,
+		posFromY: 20,
 	};
 
 	/**
@@ -302,6 +315,7 @@ class WindowStructure {
 
 	/**
 	 * Generates the random ID of the window.
+	 * @private
 	 */
 	private _genKey(): void {
 		var generatedKey = "windowkey-";
@@ -366,12 +380,25 @@ class WindowStructure {
 	}
 
 	/**
-	 * Disables the absolute position of the window. This function has to be called before `build()`.
-	 * This action deactivates the button in the menu bar.
+	 * Disables the absolute position of the window.
+	 * This action deactivates the button 0 in the menu bar.
 	 */
-	public disableAbsolutePosition(): void {
+	private _disableAbsolutePosition(): void {
 		this.absolutePosition = false;
-		this.disableButton(0);
+		if (this.window) {
+			this.disableButton(0);
+		}
+	}
+
+	/**
+	 * Enables the absolute position of the window.
+	 * This function enables the button 0 in the menu bar.
+	 */
+	private _enableAbsolutePosition(): void {
+		this.absolutePosition = true;
+		if (this.window) {
+			this.enableButton(0);
+		}
 	}
 
 	/**
@@ -441,43 +468,86 @@ class WindowStructure {
 	}
 
 	/**
-	 * Minimizes the window. This is not possible if the absolute position has been disallowed.
-	 * @param x The x-direction of the absolute position ("left" by default or "right").
-	 * @param y The y-direction of the absolute position ("bottom" by default or "top").
-	 * @param posFromX The position from the left of right side (by default 20).
-	 * @param posFromY The position from the bottom or top side (by default 20).
+	 * Temporarily disables the draggable property of the window & resets its position.
 	 */
-	public minify(x: string = "left", y: string = "bottom", posFromX: number = 20, posFromY: number = 20): void {
+	private _hideDraggable() {
+		if (this.draggable && this.window && this.window.parentElement) {
+			this.window.setAttribute("draggable", "false");
+			this.window.parentElement.style.left = "";
+			this.window.parentElement.style.top = "";
+		}
+	}
+
+	/**
+	 * Resets the position of the window if it is draggable (after using `minify()`).
+	 */
+	private _resetDraggable() {
+		if (this.draggable && this.window && this.window.parentElement) {
+			this.window.parentElement.style.left = "";
+			this.window.parentElement.style.top = "";
+			this.window.parentElement.style.bottom = "";
+			this.window.parentElement.style.right = "";
+			this.window.setAttribute("draggable", "true");
+		}
+	}
+
+	/**
+	 * Temporarily disables the resizable property of the window because we don't want the user to move it when it's minimized.
+	 */
+	private _hideResizable() {
+		if (this.resizable && this.window) {
+			this.window.style.resize = "none";
+		}
+	}
+
+	/**
+	 * Resets the resizable property if it is enabled (after using `minify()`).
+	 */
+	private _resetResizable() {
+		if (this.resizable && this.window) {
+			this.window.style.resize = "both";
+		}
+	}
+
+	/**
+	 * Minimizes the window. This is not possible if the absolute position has been disallowed.
+	 * @param {string} x The x-direction of the absolute position ("left" by default or "right").
+	 * @param {string} y The y-direction of the absolute position ("bottom" by default or "top").
+	 * @param {number} posFromX The position from the left of right side (by default 20).
+	 * @param {number} posFromY The position from the bottom or top side (by default 20).
+	 */
+	public minify(
+		x: string = this.minimizationOptions.xSide,
+		y: string = this.minimizationOptions.ySide,
+		posFromX: number = this.minimizationOptions.posFromX,
+		posFromY: number = this.minimizationOptions.posFromY
+	): void {
 		if (this.isFullscreen) {
 			this.exitFullscreen();
 		}
 
 		if (this.window) {
-			if (this.absolutePosition) {
-				if (this.draggable) {
-					this.window.style.width = this.minWidth + "px";
-					this.window.style.height = this.minHeight + "px";
-
-					x === "right"
-						? (this.window.parentElement!.style.right = posFromX + "px")
-						: (this.window.parentElement!.style.left = posFromX + "px");
-
-					y === "top"
-						? (this.window.parentElement!.style.top = posFromY + "px")
-						: (this.window.parentElement!.style.bottom = posFromY + "px");
-				} else {
-					this.window.style.position = "absolute";
-					this.window.style.width = "200px";
-					this.window.style.height = "100px";
-
-					x === "right"
-						? (this.window.style.right = posFromX + "px")
-						: (this.window.style.left = posFromX + "px");
-
-					y === "top"
-						? (this.window.style.top = posFromY + "px")
-						: (this.window.style.bottom = posFromY + "px");
+			if (this.absolutePosition && this.draggable) {
+				if (this.window.parentElement === null) {
+					throw new Error("Cannot minimize the window.");
 				}
+
+				this.window.style.width = this.minWidth + "px";
+				this.window.style.height = this.minHeight + "px";
+
+				// disable draggable
+				// very important /!\
+				this._hideDraggable();
+
+				x === "right"
+					? (this.window.parentElement.style.right = posFromX + "px")
+					: (this.window.parentElement.style.left = posFromX + "px");
+
+				y === "top"
+					? (this.window.parentElement.style.top = posFromY + "px")
+					: (this.window.parentElement.style.bottom = posFromY + "px");
+
+				this._hideResizable();
 
 				this.status = 1;
 				this.disableButton(0);
@@ -500,6 +570,10 @@ class WindowStructure {
 
 		if (this.status === 1) {
 			if (this.window) {
+				// because we disabled draggable & resizable with minify()
+				this._resetDraggable();
+				this._resetResizable();
+
 				this.window.style.width = this.width + "px";
 				this.window.style.height = this.height + "px";
 
@@ -516,16 +590,22 @@ class WindowStructure {
 	/**
 	 * Closes the window only if it's not already closed. The window is just hidden with a `display:none`.
 	 */
-	public close(): void {
+	public close(confirmation?: string): void {
 		if (this.isFullscreen) {
 			this.exitFullscreen();
 		}
 
 		if (!this.isClosed()) {
 			if (this.window) {
-				this.window.style.display = "none";
-
-				this.closeCallback();
+				if (confirmation) {
+					if (confirm(confirmation)) {
+						this.window.style.display = "none";
+						this.closeCallback();
+					}
+				} else {
+					this.window.style.display = "none";
+					this.closeCallback();
+				}
 			} else {
 				throw new Error("The window is not built.");
 			}
@@ -618,20 +698,95 @@ class WindowStructure {
 	}
 
 	/**
-	 * Makes the window draggable or not. This method has be called before `build()`.
+	 * Makes the window draggable or not.
 	 * @param {boolean} draggable True to make the window draggable.
 	 */
 	public setDraggable(draggable: boolean): void {
-		this.draggable = draggable;
-		this.absolutePosition = true;
+		if (draggable === false) {
+			if (this.status === 1) {
+				this.extend();
+			}
+
+			// if the draggable property is already set to true
+			this._hideDraggable();
+			// disable it
+			this.draggable = false;
+			this._disableAbsolutePosition();
+		} else if (draggable === true) {
+			// if this is the first time that we set the draggable property to true
+			// & if we do it after `build()`:
+			if (this.window && this.window.parentElement) {
+				var parent = this.window.parentElement;
+				if (parent.className !== "tooltip drag") {
+					new Dragger(this.window);
+				}
+			}
+
+			this.draggable = true;
+			this._enableAbsolutePosition();
+			this._resetDraggable();
+		}
 	}
 
 	/**
-	 * Makes the window resizable or not. This method has be called before `build()`.
+	 * Makes the window resizable or not.
+	 * If the window is minimized (status === 1), then `extend()` is called.
 	 * @param {boolean} resizable True to make the window resizable.
 	 */
 	public setResizable(resizable: boolean): void {
-		this.resizable = resizable;
+		if (this.status === 1) {
+			this.extend();
+		}
+
+		if (resizable === true) {
+			this.resizable = true;
+			if (this.window) {
+				this.window.style.resize = "both";
+			}
+		} else if (resizable === false) {
+			this.resizable = false;
+			if (this.window) {
+				this.window.style.resize = "none";
+			}
+		}
+	}
+
+	/**
+	 * Sets the title of the window (in the menu bar).
+	 * @param {string} title The new title of the window.
+	 */
+	public setTitle(title: string): void {
+		this.title = title;
+		if (this.window) {
+			var titleElement = this.window.querySelector(".window-title");
+			if (titleElement) {
+				titleElement.textContent = this.title;
+			} else {
+				throw new Error("The window was not built correctly.");
+			}
+		}
+	}
+
+	/**
+	 * Sets the width of the window.
+	 * @param {number} width The width of the window.
+	 */
+	public setWidth(width: number): void {
+		this.width = width;
+		if (this.window) {
+			this.window.style.width = this.width + "px";
+		}
+	}
+
+	/**
+	 * Sets the height of the window.
+	 * @param {number} height The height of the window.
+	 */
+	public setHeight(height: number): void {
+		this.height = height;
+		if (this.window) {
+			this.window.style.height = this.height + "px";
+		}
 	}
 
 	/**
@@ -657,15 +812,8 @@ class WindowStructure {
 		if (this.window) {
 			this.window.style.minWidth = this.minWidth + "px";
 			this.window.style.minHeight = this.minHeight + "px";
-			this.window.style.width = this.width + "px";
-			this.window.style.height = this.height + "px";
 			this.window.style.color = this.colors.text;
 			this.window.style.backgroundColor = this.colors.background;
-
-			if (this.resizable) {
-				this.window.style.resize = "both";
-				this.window.style.overflow = "auto";
-			}
 
 			var menubar = this.window.querySelector(".window-bar") as HTMLElement;
 			menubar.style.backgroundColor = this.colors.menubarBackground;
@@ -686,7 +834,7 @@ class WindowStructure {
 			div.window#${this.key}
 				>div.window-bar
 					>>div.window-container-title
-						>>>span(${this.title})
+						>>>span.window-title(${this.title})
 					>>div.window-main-buttons
 						>>>button(&#150;)[type=button]@minify
 						>>>button(&#8597;)[type=button; disabled]@extend
@@ -700,10 +848,18 @@ class WindowStructure {
 
 		this.builder.generate(maintemplate);
 		this.window = document.querySelector("#" + this.key) as HTMLElement;
+
+		// we don't want to reset the width & the height when calling `applyStyles()`
+		this.setHeight(this.height);
+		this.setWidth(this.width);
+		// apply the general styles
 		this.applyStyles();
 
+		this.setResizable(this.resizable);
 		if (this.draggable === true) {
 			new Dragger(this.window);
+		} else {
+			this.disableButton(0);
 		}
 	}
 }

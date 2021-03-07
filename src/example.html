@@ -12,6 +12,8 @@
     <style>
         body {
             height: 100vh;
+            margin: 0;
+            padding: 0;
         }
     </style>
 </head>
@@ -22,12 +24,22 @@
 
     <script src="./WindowStructure.js"></script>
     <script>
-        var container = document.querySelector("#container");
-        var structure = new WindowStructure();
+        // with all the default values:
+        // (title, width, height, draggable, resizable, parent)
+        var structure = new WindowStructure("Window", 800, 462, true, true, document.body);
         structure.setDraggable(false);
-        structure.setResizable(false);
-        structure.setParent(container);
-        structure.build(`p(Ceci est un paragraphe !)`);
+
+        structure.builder.bindEvent({
+            name: 'toggleDraggable',
+            type: 'click',
+            callback: function () {
+                structure.setDraggable(!structure.draggable);
+            }
+        });
+
+        structure.build(`
+            button(Toggle draggable)[type=button]@toggleDraggable
+        `);
     </script>
 </body>
 
