@@ -294,24 +294,24 @@ class WindowStructure {
 	 * True if the window is in fullscreen.
 	 * @type {boolean}
 	 * @default false
-	 * @private
+	 * @public
 	 */
-	private isFullscreen: boolean = false;
+	public isFullscreen: boolean = false;
 
 	/**
 	 * An instance of HTMLBuilder.
 	 * {@link https://github.com/CodoPixel/HTMLBuilder}
 	 * @type {HTMLBuilder}
-	 * @private
+	 * @protected
 	 */
-	private builder: HTMLBuilder = new HTMLBuilder();
+	protected builder: HTMLBuilder = new HTMLBuilder();
 
 	/**
 	 * The window ID. This ID is unique and thanks to it, we can create several windows without conflict.
 	 * @type {string}
-	 * @private
+	 * @protected
 	 */
-	private key: string = "";
+	protected key: string = "";
 
 	/**
 	 * Generates the random ID of the window.
